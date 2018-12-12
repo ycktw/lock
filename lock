@@ -1,5 +1,6 @@
 #!/bin/bash
 
+FONT="$HOME/.fonts/NotoSansCJKkr-Regular.otf"
 # Dependencies: imagemagick, i3lock-color-git, scrot
 
 # get path where the script is located
@@ -64,7 +65,7 @@ COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -E '/.*$/ {
 if [ "$COLOR" -gt "$VALUE" ]; then #white background image and black text
     convert $IMAGE -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
-        -font Liberation-Sans -pointsize 32 -fill black  -gravity center \
+        -font $FONT -pointsize 32 -fill black  -gravity center \
         -annotate +0+160 "$TEXT" \
         $SCRIPTPATH/images/$LOCKICONDARK.png -gravity center -composite $IMAGE
     PARAM='--textcolor=00000000 --insidecolor=0ad65c1c --ringcolor=0000003e \
@@ -73,7 +74,7 @@ if [ "$COLOR" -gt "$VALUE" ]; then #white background image and black text
 else #black background with light text
     convert $IMAGE -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
-        -font Liberation-Sans -pointsize 32 -fill white -gravity Center \
+        -font $FONT -pointsize 32 -fill white -gravity Center \
         -annotate +0+160 "$TEXT" \
         $SCRIPTPATH/images/$LOCKICONREG.png -gravity center -composite $IMAGE
     PARAM='--textcolor=ffffff00 --insidecolor=0ad65c6c --ringcolor=ffffff3e \
