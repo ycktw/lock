@@ -12,7 +12,7 @@ popd > /dev/null
 #quotegenProgram="/home/tanuj/Code/build-quotesCategories-Desktop-Debug/quotesCategories"
 #quotegenProgram="$SCRIPTPATH/quoteGeneratorSnapshot" # uncomment this after building the c++ program
 
-IMAGE=$(mktemp).png
+IMAGE=$(mktemp ~/screenshot/XXXXXXXX.png)
 FULLTEXT="`shuf -n 1 $SCRIPTPATH/quotes.txt`"
 firstchar="`echo ${FULLTEXT:0:1}`"
 TEXT="\"`echo ${FULLTEXT:1}`\""
@@ -23,28 +23,24 @@ LOCKICONDARK="lockdark"
 
 ## guide to quote codes: i = IT Crowd, s = Star Wars, p = Harry Potter
 ## l = Sherlock, m = meme, a = Hamilton
-if [ "$firstchar" == "i" ];then #if itcrowd quote
-        LOCKICONREG="roundmoss"
-        LOCKICONDARK="roundmoss"
-elif [ "$firstchar" == "s" ];then #if dark side quote
+case "$firstchar" in
+    "s")
         LOCKICONREG="empireLogoWhite"
         LOCKICONDARK="empireLogo"
-elif [ "$firstchar" == "j" ];then #if light side quote
+        ;;
+    "j")
         LOCKICONREG="jediwhite"
         LOCKICONDARK="jedi"
-elif [ "$firstchar" == "p" ];then #if potter quote
-        LOCKICONREG="scarheadwhite"
-        LOCKICONDARK="scarhead"
-elif [ "$firstchar" == "l" ];then #if sherlock quote
-        LOCKICONREG="pipewhite"
-        LOCKICONDARK="pipe"
-elif [ "$firstchar" == "m" ];then #if meme quote
-        LOCKICONREG="garlicbright"
-        LOCKICONDARK="garlicdark"
-elif [ "$firstchar" == "a" ];then #if hamilton quote
+        ;;
+    "a")
         LOCKICONREG="hamiltonwhite"
         LOCKICONDARK="hamiltonblack"
-fi
+        ;;
+    *)
+        LOCKICONREG="icon2"
+        LOCKICONDARK="icon2white"
+        ;;
+esac
 
 # l10n support
 case $LANG in
@@ -54,7 +50,7 @@ case $LANG in
 esac
 
 VALUE="60" #brightness value to compare to
-scrot $IMAGE
+scrot -u $IMAGE
 COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -E '/.*$/ {
                              N
                              s/.*\n.*([0-9]{1,2}[^\.])\.[0-9]+%\)$/\1/
@@ -62,7 +58,7 @@ COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -E '/.*$/ {
 # pixelate: -scale 10% -scale 1000%
 # sigma was 1.5
 
-if [ "$COLOR" -gt "$VALUE" ]; then #white background image and black text
+if [ "$COLOR" -le "$VALUE" ]; then #white background image and black text
     convert $IMAGE -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
         -font $FONT -pointsize 32 -fill black  -gravity center \
