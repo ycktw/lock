@@ -51,14 +51,11 @@ esac
 
 VALUE="60" #brightness value to compare to
 scrot -u $IMAGE
-COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -E '/.*$/ {
-                             N
-                             s/.*\n.*([0-9]{1,2}[^\.])\.[0-9]+%\)$/\1/
-                             }'`;
+COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -e '/hsb/!d;s/.*hsb//;s/.*,//;s/%.*//;/^$/d'`
 # pixelate: -scale 10% -scale 1000%
 # sigma was 1.5
 
-if [ "$COLOR" -le "$VALUE" ]; then #white background image and black text
+if [ "$COLOR" -gt "$VALUE" ]; then #white background image and black text
     convert $IMAGE -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
         -font $FONT -pointsize 32 -fill black  -gravity center \
