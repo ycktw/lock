@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# check package dependance
+if [ -z "$(which scrot)" ]; then
+    echo "Sorry, but scrot is required"
+    exit 1
+fi
+
 FONT="$HOME/.fonts/NotoSansCJKkr-Regular.otf"
 # Dependencies: imagemagick, i3lock-color-git, scrot
 
@@ -50,8 +56,12 @@ case $LANG in
 esac
 
 VALUE="60" #brightness value to compare to
-scrot -u $IMAGE
-COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -e '/hsb/!d;s/.*hsb//;s/.*,//;s/%.*//;/^$/d'`
+rm -f $IMAGE
+while [ ! -s $IMAGE ]; do
+    scrot -u $IMAGE
+    COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -e '/hsb/!d;s/.*hsb//;s/.*,//;s/%.*//;/^$/d'`
+    sleep 1s
+done
 # pixelate: -scale 10% -scale 1000%
 # sigma was 1.5
 
