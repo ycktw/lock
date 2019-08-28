@@ -64,6 +64,8 @@ while [ ! -s $IMAGE ]; do
 done
 # pixelate: -scale 10% -scale 1000%
 # sigma was 1.5
+WIN_TGT=`i3-msg -t get_workspaces| jq -M '.[] | select(.visible==true).name' | sed 's/"//g' | grep '[12345]'`
+i3-msg workspace $WIN_TGT focus
 
 if [ "$COLOR" -gt "$VALUE" ]; then #white background image and black text
     convert $IMAGE -level 0%,100%,0.6 \
