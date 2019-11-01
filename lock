@@ -18,7 +18,17 @@ popd > /dev/null
 #quotegenProgram="/home/tanuj/Code/build-quotesCategories-Desktop-Debug/quotesCategories"
 #quotegenProgram="$SCRIPTPATH/quoteGeneratorSnapshot" # uncomment this after building the c++ program
 
-IMAGE=$(mktemp ~/screenshot/XXXXXXXX.png)
+MONITOR_NUM=$(xrandr | sed '/ connected/!d' | wc -l)
+IMAGE=$(mktemp ~/screenshot/XXXXXXXX)
+case "$MONITOR_NUM" in
+    1)
+        IMAGE0="${IMAGE}-0.png"
+        ;;
+    *)
+        IMAGE0="${IMAGE}-0.png"
+        IMAGE1="${IMAGE}-1.png"
+        ;;
+esac
 FULLTEXT="`shuf -n 1 $SCRIPTPATH/quotes.txt`"
 firstchar="`echo ${FULLTEXT:0:1}`"
 TEXT="\"`echo ${FULLTEXT:1}`\""
@@ -56,44 +66,73 @@ case $LANG in
 esac
 
 VALUE="60" #brightness value to compare to
-rm -f $IMAGE
-while [ ! -s $IMAGE ]; do
-    scrot -u $IMAGE
-    COLOR=`convert $IMAGE -colorspace hsb -resize 1x1 txt:- | sed -e '/hsb/!d;s/.*hsb//;s/.*,//;s/%.*//;/^$/d'`
+rm -f ${IMAGE}*.png
+
+#WIN_TGT=`i3-msg -t get_workspaces| jq-linux64 -M '.[] | select(.visible==true).name' | sed 's/"//g' | grep '[12345]'`
+#i3-msg workspace $WIN_TGT
+
+while [ ! -s "${IMAGE0}" -a ! -s "${IMAGE1}" ]; do
+    import -window root -crop 1920x1080 ${IMAGE}.png
     sleep 1s
 done
+if [ -s "${IMAGE0}" ]; then
+    COLOR0=`convert ${IMAGE0} -colorspace hsb -resize 1x1 txt:- | sed -e '/hsb/!d;s/.*hsb//;s/.*,//;s/%.*//;/^$/d'`
+    COLOR1=`convert ${IMAGE1} -colorspace hsb -resize 1x1 txt:- | sed -e '/hsb/!d;s/.*hsb//;s/.*,//;s/%.*//;/^$/d'`
+else
+    notify_local "$IMAGE not exist"
+    exit 1
+fi
 # pixelate: -scale 10% -scale 1000%
 # sigma was 1.5
-WIN_TGT=`i3-msg -t get_workspaces| jq -M '.[] | select(.visible==true).name' | sed 's/"//g' | grep '[12345]'`
-i3-msg workspace $WIN_TGT
 
-if [ "$COLOR" -gt "$VALUE" ]; then #white background image and black text
-    convert $IMAGE -level 0%,100%,0.6 \
+ANNOTATE_STR0="-gravity center -annotate -960+120"
+ANNOTATE_STR1="-gravity center -annotate +960+120"
+ANNOTATE_IMAGE="-gravity center "
+
+if [ "$COLOR0" -gt "$VALUE" ]; then #white background image and black text
+    convert $IMAGE0 -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
-        -font $FONT -pointsize 32 -fill black  -gravity center \
-        -annotate +0+160 "$TEXT" \
-        $SCRIPTPATH/images/$LOCKICONDARK.png -gravity center -composite $IMAGE
+        -font $FONT -pointsize 32 -fill black $ANNOTATE_STR0 "$TEXT" \
+        $SCRIPTPATH/images/$LOCKICONDARK.png $ANNOTATE_IMAGE -composite $IMAGE0
     PARAM='--textcolor=00000000 --insidecolor=0ad65c1c --ringcolor=0000003e \
         --linecolor=00000000 --keyhlcolor=74e85888 --ringvercolor=ffffff00 \
         --insidevercolor=ffffff1c --ringwrongcolor=ffffff55 --insidewrongcolor=bf09095c'
 else #black background with light text
-    convert $IMAGE -level 0%,100%,0.6 \
+    convert $IMAGE0 -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
-        -font $FONT -pointsize 32 -fill white -gravity Center \
-        -annotate +0+160 "$TEXT" \
-        $SCRIPTPATH/images/$LOCKICONREG.png -gravity center -composite $IMAGE
+        -font $FONT -pointsize 32 -fill white $ANNOTATE_STR0 "$TEXT" \
+        $SCRIPTPATH/images/$LOCKICONREG.png $ANNOTATE_IMAGE -composite $IMAGE0
     PARAM='--textcolor=ffffff00 --insidecolor=0ad65c6c --ringcolor=ffffff3e \
         --linecolor=ffffff00 --keyhlcolor=74e85888 --ringvercolor=00000000 \
         --insidevercolor=0000001c --ringwrongcolor=00000055 --insidewrongcolor=bf20151c'
 fi
+if [ "$COLOR1" -gt "$VALUE" ]; then #white background image and black text
+    convert $IMAGE1 -level 0%,100%,0.6 \
+        -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
+        -font $FONT -pointsize 32 -fill white $ANNOTATE_STR1 "$TEXT" \
+        $SCRIPTPATH/images/$LOCKICONREG.png $ANNOTATE_IMAGE -composite $IMAGE1
+else
+    convert $IMAGE1 -level 0%,100%,0.6 \
+        -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
+        -font $FONT -pointsize 32 -fill black $ANNOTATE_STR1 "$TEXT" \
+        $SCRIPTPATH/images/$LOCKICONDARK.png $ANNOTATE_IMAGE -composite $IMAGE1
+fi
 
 # try to use a forked version of i3lock with prepared parameters
-i3lock $PARAM -i $IMAGE > /dev/null 2>&1
+case "$MONITOR_NUM" in
+    1)
+        mv $IMAGE0 ${IMAGE}.png
+        ;;
+    *)
+        convert +append $IMAGE0 $IMAGE1 ${IMAGE}.png
+        ;;
+esac
+i3lock $PARAM -i ${IMAGE}.png -f > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
     # We have failed, lets get back to stock one
-    i3lock -i $IMAGE
+    i3lock -i ${IMAGE}.png -f
 fi
 
-rm $IMAGE
+rm -f ${IMAGE}.png
 sleep 1 && xdotool type " " && xdotool key BackSpace
