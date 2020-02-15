@@ -109,12 +109,12 @@ fi
 if [ "$COLOR1" -gt "$VALUE" ]; then #white background image and black text
     convert $IMAGE1 -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
-        -font $FONT -pointsize 32 -fill white $ANNOTATE_STR1 "$TEXT" \
+        -font $FONT -pointsize 32 -fill black $ANNOTATE_STR1 "$TEXT" \
         $SCRIPTPATH/images/$LOCKICONREG.png $ANNOTATE_IMAGE -composite $IMAGE1
 else
     convert $IMAGE1 -level 0%,100%,0.6 \
         -filter Gaussian -resize 20% -define filter:sigma=8.5 -resize 500.5% \
-        -font $FONT -pointsize 32 -fill black $ANNOTATE_STR1 "$TEXT" \
+        -font $FONT -pointsize 32 -fill white $ANNOTATE_STR1 "$TEXT" \
         $SCRIPTPATH/images/$LOCKICONDARK.png $ANNOTATE_IMAGE -composite $IMAGE1
 fi
 
@@ -134,5 +134,5 @@ if [ $? -ne 0 ]; then
     i3lock -i ${IMAGE}.png -f
 fi
 
-rm -f ${IMAGE}.png
+rm -f ${IMAGE} ${IMAGE}*.png
 sleep 1 && xdotool type " " && xdotool key BackSpace
